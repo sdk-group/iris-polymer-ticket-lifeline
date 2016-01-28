@@ -1,20 +1,34 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-card/paper-card.html">
-<link rel="import" href="../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/notification-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/maps-icons.html">
 
 <dom-module id="iris-ticket-lifeline">
   <template>
     <style>
       :host {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        @apply(--layout-vertical);
+        @apply(--layout-flex);
+      }
+      
+      .history {
+        margin-top: -20%;
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        @apply(--layout-center-justified);
+        @apply(--layout-flex);
       }
       
       .status {
-        padding: 0px 40px;
+        padding-top: 30px;
         display: flex;
         justify-content: center;
+        flex-direction: column;
+        align-items: center;
         border-top: 2px solid #D6DCE0;
         position: relative;
         transition: all 200ms ease-in;
@@ -25,7 +39,6 @@
       }
       
       .timestamp {
-        margin-bottom: 20px;
         padding: 0px 40px;
         display: flex;
         flex-direction: column;
@@ -33,37 +46,146 @@
         font-weight: 100;
       }
       
-      .status:before {
-        content: '';
-        width: 25px;
-        height: 25px;
+      iron-icon {
+        width: 40px;
+        height: 40px;
         background-color: white;
-        border-radius: 25px;
+        border-radius: 50%;
         border: 1px solid #ddd;
-        position: absolute;
-        top: -15px;
-        left: 42%;
+        position: relative;
+        top: 30px;
+        left: calc(50% - 30px);
         transition: all 200ms ease-in;
+        padding: 10px;
+        z-index: 10;
+      }
+      
+      .history-record {
+        width: 25%;
+      }
+      
+      .form-controlls {
+        @apply(--layout-horizontal);
+        @apply(--layout-justified);
+      }
+      
+      .form-controlls paper-icon-button,
+      .form-controlls .fixture {
+        @apply(--pagination-icon-buttons);
+      }
+      
+      .form-controlls .fixture {
+        border: none !important;
+      }
+      
+      .form-controlls paper-icon-button[disabled] {
+        @apply(--pagination-icon-buttons-disabled);
+      }
+      
+      .timestamp .parts {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+      
+      .timestamp .parts span {
+        margin-bottom: 5px;
       }
     </style>
 
-    <template is="dom-repeat" items="[[history]]">
-      <div class="history-record">
-        <div class="timestamp">
-          <span class="author">[[item.source.type]] </span>
-          <span class="date">11/15/2014 </span>
+    <div class="history">
+      <template is="dom-repeat" items="[[history]]">
+        <div class="history-record">
+          <div class="timestamp">
+            <div class="parts">
+              <span class="day">[[_transformDay(item.time)]] </span>
+              <span class="time">[[_transformTime(item.time)]] </span>
+              <span class="date">[[_transformDate(item.time)]] </span>
+            </div>
+          </div>
+          <iron-icon icon="[[_getIcon(item.event_name)]]"></iron-icon>
+          <div class="status">
+            <h4> [[_translateEvent(item.event_name)]] </h4>
+            <div class="description">[[_describe(item)]] </div>
+          </div>
         </div>
-        <div class="status">
-          <h4> [[item.event]] </h4>
-        </div>
-      </div>
-    </template>
+      </template>
+    </div>
+
+    <div class="form-controlls">
+      <paper-icon-button icon="icons:chevron-left" on-click="paginationPrevious" disabled$="{{!canPrevious(currentPage)}}"> </paper-icon-button>
+      <a href="/">
+        <paper-icon-button icon="home"></paper-icon-button>
+      </a>
+      <paper-icon-button icon="icons:chevron-right" on-click="paginationNext" disabled$="[[!canNext(currentPage)]]"></paper-icon-button>
+    </div>
   </template>
   <script>
     (function() {
       'use strict'
-      let icons_registry = {};
-      let event_translation = {};
+
+      let icons_registry = {
+        'book': 'icons:query-builder',
+        'register': 'maps:local-offer',
+        'call': 'social:notifications',
+        'call-again': 'social:notifications-active',
+        'processing': 'social:person',
+        'closed': 'icons:done',
+        'postpone': 'av:pause',
+        'restore': 'icons:cached',
+        'priority-up': 'icons:arrow-upward',
+        'priority-down': 'icons:arrow-downward',
+        'route': 'icons:compare-arrows',
+        'qa-check': 'editor:insert-emoticon',
+        'remove': 'icons:highlight-off',
+        'expire': 'image:timer-off'
+      };
+
+      let event_translation = {
+        'book': 'забронирован',
+        'register': 'зарегистрирован',
+        'call': 'вызван',
+        'call-again': 'вызван повторно',
+        'processing': 'подошел',
+        'closed': 'закрыт',
+        'postpone': 'отложен',
+        'restore': 'восстановлен',
+        'priority-up': 'повышен приоритет',
+        'priority-down': 'понижен приоритет',
+        'route': 'передан',
+        'qa-check': 'оценка качества',
+        'remove': 'удален',
+        'expire': 'просрочен'
+      };
+
+      let getComposer = function(source, event) {
+        let type = source.type;
+        let result;
+        switch (type + ':' + event) {
+          case 'terminal:register':
+            result = 'Зарегано на терминале %source.type% %source.id%'
+            break;
+          case 'terminal:qa-check':
+            result = 'Я оцениль'
+            break;
+          default:
+            result = 'Понятия не имею как это переводить';
+        }
+
+        return function(item) {
+          var regExp = /\%([^%]+)\%/g;
+          var matches = result.match(regExp);
+
+          _.forEach(matches, match => {
+            let key = match.substring(1, match.length - 1);
+            let value = _.get(item, key) || '';
+            result = result.replace(match, value)
+          });
+          return result;
+        }
+
+      };
+
       Polymer({
         is: 'iris-ticket-lifeline',
         properties: {
@@ -71,11 +193,47 @@
             type: Object
           },
           history: {
-            type: Array
+            computed: '_computePage(pages, currentPage)'
           }
         },
         updateHistory(h) {
-          this.set('history', h);
+          this.pages = _.chunk(h, 4);
+          this.set('currentPage', 0);
+        },
+        _computePage(pages, currentPage) {
+          return pages[currentPage]
+        },
+        _translateEvent(event) {
+          return _.capitalize(event_translation[event])
+        },
+        _transformTime(time) {
+          return (new Date(time)).toLocaleTimeString();
+        },
+        _transformDate(time) {
+          return (new Date(time)).toLocaleDateString();
+        },
+        _transformDay(time) {
+          let day = (new Date(time)).getDay() - 1;
+          return ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][day];
+        },
+        _getIcon(event) {
+          return icons_registry[event]
+        },
+        _describe(item) {
+          let composer = getComposer(item.subject, item.event_name);
+          return composer ? composer(item) : ''
+        },
+        paginationPrevious() {
+          this.set('currentPage', this.currentPage - 1);
+        },
+        paginationNext() {
+          this.set('currentPage', this.currentPage + 1);
+        },
+        canPrevious(n) {
+          return this.pages && n > 0;
+        },
+        canNext(n) {
+          return this.pages && (n < this.pages.length - 1);
         }
       });
     })()
