@@ -92,7 +92,7 @@
         margin-bottom: 5px;
       }
     </style>
-
+    <iris-shared-entities id="timezone" namespace="timezone" key="name" value="{{tz}}"></iris-shared-entities>
     <div class="history">
       <template is="dom-repeat" items="[[history]]">
         <div class="history-record">
@@ -113,11 +113,11 @@
     </div>
 
     <div class="form-controlls">
-      <paper-icon-button icon="icons:chevron-left" on-click="paginationPrevious" disabled$="{{!canPrevious(currentPage)}}"> </paper-icon-button>
+      <paper-icon-button icon="icons:chevron-left" on-click="paginationPrevious" disabled$="{{!canPrevious(currentPage,pages)}}"> </paper-icon-button>
       <a href="/">
         <paper-icon-button icon="home"></paper-icon-button>
       </a>
-      <paper-icon-button icon="icons:chevron-right" on-click="paginationNext" disabled$="[[!canNext(currentPage)]]"></paper-icon-button>
+      <paper-icon-button icon="icons:chevron-right" on-click="paginationNext" disabled$="[[!canNext(currentPage,pages)]]"></paper-icon-button>
     </div>
   </template>
   <script>
@@ -197,7 +197,8 @@
           }
         },
         updateHistory(h) {
-          this.pages = _.chunk(h, 4);
+          this.pages = _.chunk(_.orderBy(h, 'time', 'asc'), 4);
+          console.log(this.pages);
           this.set('currentPage', 0);
         },
         _computePage(pages, currentPage) {
@@ -207,14 +208,13 @@
           return _.capitalize(event_translation[event])
         },
         _transformTime(time) {
-          return (new Date(time)).toLocaleTimeString();
+          return moment(time, 'x').tz(this.tz).format('H : mm');
         },
         _transformDate(time) {
-          return (new Date(time)).toLocaleDateString();
+          return moment(time, 'x').tz(this.tz).format('Do MMM YYYY');
         },
         _transformDay(time) {
-          let day = (new Date(time)).getDay() - 1;
-          return ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][day];
+          return moment(time, 'x').tz(this.tz).format('dd')
         },
         _getIcon(event) {
           return icons_registry[event]
@@ -229,10 +229,10 @@
         paginationNext() {
           this.set('currentPage', this.currentPage + 1);
         },
-        canPrevious(n) {
+        canPrevious(n, pages) {
           return this.pages && n > 0;
         },
-        canNext(n) {
+        canNext(n, pages) {
           return this.pages && (n < this.pages.length - 1);
         }
       });
