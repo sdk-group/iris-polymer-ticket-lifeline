@@ -114,9 +114,11 @@
 
     <div class="form-controlls">
       <paper-icon-button icon="icons:chevron-left" on-click="paginationPrevious" disabled$="{{!canPrevious(currentPage,pages)}}"> </paper-icon-button>
-      <a href="/">
+
+      <a href="[[baseUrl]]">
         <paper-icon-button icon="home"></paper-icon-button>
       </a>
+
       <paper-icon-button icon="icons:chevron-right" on-click="paginationNext" disabled$="[[!canNext(currentPage,pages)]]"></paper-icon-button>
     </div>
   </template>
@@ -162,14 +164,7 @@
         let type = source.type;
         let result;
         switch (type + ':' + event) {
-          case 'terminal:register':
-            result = 'Зарегано на терминале %source.type% %source.id%'
-            break;
-          case 'terminal:qa-check':
-            result = 'Я оцениль'
-            break;
-          default:
-            result = 'Понятия не имею как это переводить';
+          default: result = '';
         }
 
         return function(item) {
@@ -195,6 +190,9 @@
           history: {
             computed: '_computePage(pages, currentPage)'
           }
+        },
+        ready() {
+          this.baseUrl = app.baseUrl;
         },
         updateHistory(h) {
           this.pages = _.chunk(_.orderBy(h, 'time', 'asc'), 4);
