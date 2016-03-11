@@ -99,9 +99,9 @@
         <div class="history-record">
           <div class="timestamp">
             <div class="parts">
-              <span class="day">[[_transformDay(item.time)]] </span>
-              <span class="time">[[_transformTime(item.time)]] </span>
-              <span class="date">[[_transformDate(item.time)]] </span>
+              <span class="day">[[_transformDay(item.local_time)]] </span>
+              <span class="time">[[_transformTime(item.local_time)]] </span>
+              <span class="date">[[_transformDate(item.local_time)]] </span>
             </div>
           </div>
           <iron-icon icon="[[_getIcon(item.event_name)]]"></iron-icon>
@@ -196,8 +196,9 @@
           this.baseUrl = app.baseUrl;
         },
         updateHistory(h) {
-          this.pages = _.chunk(_.orderBy(h, 'time', 'asc'), 4);
-          console.log(this.pages);
+          let filtered = _.filter(h, record => !!event_translation[record.event_name]);
+          this.pages = _.chunk(_.orderBy(filtered, 'time', 'asc'), 4);
+
           this.set('currentPage', 0);
         },
         _computePage(pages, currentPage) {
@@ -207,13 +208,13 @@
           return _.capitalize(event_translation[event])
         },
         _transformTime(time) {
-          return moment(time, 'x').tz(this.tz).format('H : mm');
+          return moment(time, 'x').format('H : mm');
         },
         _transformDate(time) {
-          return moment(time, 'x').tz(this.tz).format('Do MMM YYYY');
+          return moment(time, 'x').format('Do MMM YYYY');
         },
         _transformDay(time) {
-          return moment(time, 'x').tz(this.tz).format('dd')
+          return moment(time, 'x').format('dd')
         },
         _getIcon(event) {
           return icons_registry[event]
