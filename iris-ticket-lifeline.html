@@ -210,13 +210,13 @@
           return _.capitalize(event_translation[event])
         },
         _transformTime(time) {
-          return moment(time, 'x').format('H : mm');
+          return moment(time).tz(this.tz).format('H : mm');
         },
         _transformDate(time) {
-          return moment(time, 'x').format('Do MMM YYYY');
+          return moment(time).tz(this.tz).format('Do MMM YYYY');
         },
         _transformDay(time) {
-          return moment(time, 'x').format('dd')
+          return moment(time).tz(this.tz).format('dd')
         },
         _getIcon(event) {
           return icons_registry[event]
