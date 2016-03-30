@@ -116,7 +116,7 @@
     <div class="form-controlls">
       <paper-icon-button icon="icons:chevron-left" on-click="paginationPrevious" disabled$="{{!canPrevious(currentPage,pages)}}"> </paper-icon-button>
 
-      <a href="[[baseUrl]]">
+      <a href="[[baseUrl]]" onmousedown="return false">
         <paper-icon-button icon="home"></paper-icon-button>
       </a>
 
