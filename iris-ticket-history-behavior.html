@@ -1,0 +1,99 @@
+<script>
+  (function () {
+    'use strict'
+
+    let icons_registry = {
+      'book': 'icons:query-builder',
+      'register': 'maps:local-offer',
+      'activate': 'maps:local-offer',
+      'call': 'social:notifications',
+      'call-again': 'social:notifications-active',
+      'processing': 'social:person',
+      'close': 'icons:done',
+      'postpone': 'av:pause',
+      'restore': 'icons:cached',
+      'priority-up': 'icons:arrow-upward',
+      'priority-down': 'icons:arrow-downward',
+      'route': 'icons:compare-arrows',
+      'qa-check': 'editor:insert-emoticon',
+      'remove': 'icons:highlight-off',
+      'expire': 'image:timer-off',
+      'return': 'reply'
+    };
+
+    let event_translation = {
+      'book': 'забронирован',
+      'register': 'зарегистрирован',
+      'activate': 'зарегистрирован',
+      'call': 'вызван',
+      'call-again': 'вызван повторно',
+      'processing': 'подошел',
+      'close': 'закрыт',
+      'postpone': 'отложен',
+      'restore': 'восстановлен',
+      'priority-up': 'повышен приоритет',
+      'priority-down': 'понижен приоритет',
+      'route': 'передан',
+      'qa-check': 'оценка качества',
+      'remove': 'удален',
+      'expire': 'просрочен'
+    };
+
+    let system_event_translation = {
+      "return": "возвращен"
+    };
+
+    let getComposer = function (source, event) {
+      let type = source.type;
+      let result;
+      switch (type + ':' + event) {
+        default:
+          result = '';
+      }
+
+      return function (item) {
+        var regExp = /\%([^%]+)\%/g;
+        var matches = result.match(regExp);
+
+        _.forEach(matches, match => {
+          let key = match.substring(1, match.length - 1);
+          let value = _.get(item, key) || '';
+          result = result.replace(match, value)
+        });
+        return result;
+      }
+
+    };
+
+    window.IrisBehaviors = window.IrisBehaviors || {};
+
+    IrisBehaviors.TicketHistoryBehavior = {
+      _translateEvent(event, include_system) {
+        let translation = _.capitalize(event_translation[event]);
+        if (include_system && !translation) {
+          translation = _.capitalize(system_event_translation[event]);
+        }
+        return translation;
+      },
+      _transformTime(time) {
+        return moment(time).tz(this.tz).format('H : mm');
+      },
+      _transformDate(time) {
+        return moment(time).tz(this.tz).format('Do MMM YYYY');
+      },
+      _transformDay(time) {
+        return moment(time).tz(this.tz).format('dd')
+      },
+      _getIcon(event) {
+        return icons_registry[event];
+      },
+      _describe(item) {
+        let composer = getComposer(item.subject, item.event_name);
+        return composer instanceof Function
+          ? composer(item)
+          : ''
+      }
+    };
+
+  })();
+</script>
