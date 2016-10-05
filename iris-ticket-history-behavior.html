@@ -75,6 +75,9 @@
         }
         return translation;
       },
+      _hasTranslation(event, include_system) {
+        return event_translation.hasOwnProperty(event);
+      },
       _transformTime(time) {
         return moment(time).tz(this.tz).format('H : mm');
       },
