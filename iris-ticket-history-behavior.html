@@ -90,6 +90,56 @@
       _getIcon(event) {
         return icons_registry[event];
       },
+      _systemEvent(item) {
+        let result = [
+          {
+            value: 'Система'
+          }
+        ];
+        let ws_id = _.get(item, ['context', 'workstation']) || 'NO';
+        let is_satelite = ! !~ ws_id.indexOf('qa--satellite--');
+        if (is_satelite) {
+          ws_id = _.last(ws_id.split('--'));
+        }
+
+        let ws = this.$.workstations.get(ws_id);
+
+        if (!!ws) {
+          result.push({value: ws.label});
+        }
+        return result;
+      },
+      _operatorEvent(item) {
+        let id = item.subject.id;
+        let oper = this.$.operators.get(id) || {};
+
+        let ws_id = _.get(item, ['context', 'workstation']) || 'NO';
+
+        let ws = this.$.workstations.get(ws_id) || {
+          label: ''
+        };
+
+        return [
+          {
+            value: `${oper.first_name} ${oper.middle_name} ${oper.last_name}`
+          }, {
+            value: `${ws.label}`
+          }
+        ];
+      },
+      _terminalEvent(item) {
+        let id = item.subject.id;
+        let ws = this.$.workstations.get(id) || {};
+
+        return [
+          {
+            value: `${ws.label}`
+          }
+        ];
+      },
+      _employeeEvent(item) {
+        return this._operatorEvent(item)
+      },
       _describe(item) {
         let composer = getComposer(item.subject, item.event_name);
         return composer instanceof Function
