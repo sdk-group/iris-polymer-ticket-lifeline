@@ -24,7 +24,7 @@
     let event_translation = {
       'book': 'забронирован',
       'register': 'зарегистрирован',
-      'activate': 'зарегистрирован',
+      'activate': 'зарегистрирован по ПИН-коду',
       'call': 'вызван',
       'call-again': 'вызван повторно',
       'processing': 'подошел',
@@ -75,6 +75,9 @@
         }
         return translation;
       },
+      _getTranslationMap() {
+        return event_translation;
+      },
       _hasTranslation(event, include_system) {
         return event_translation.hasOwnProperty(event);
       },
@@ -104,7 +107,7 @@
 
         let ws = this.$.workstations.get(ws_id);
 
-        if (!!ws) {
+        if (!!ws && item.event_name != "restore") {
           result.push({value: ws.label});
         }
         return result;
@@ -119,13 +122,25 @@
           label: ''
         };
 
-        return [
+        let base = [
           {
             value: `${oper.first_name} ${oper.middle_name} ${oper.last_name}`
           }, {
             value: `${ws.label}`
           }
         ];
+
+        if (item.event_name == 'route') {
+          let dest = _.get(item, 'context.destination');
+          dest = dest
+            ? _.castArray(dest)
+            : [];
+          let value = "Окна назначения: " + (_.isEmpty(dest)
+            ? 'Все'
+            : _.map(dest, ws_id => (this.$.workstations.get(ws_id) || {}).label).join(', '));
+          base.push({value});
+        }
+        return base;
       },
       _terminalEvent(item) {
         let id = item.subject.id;
